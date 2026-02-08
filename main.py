@@ -7,11 +7,15 @@ Created on Sat Feb  7 09:05:21 2026
 """
 import os
 import ProcessVideo as ProcessVideo
+import matplotlib.pyplot as plt
+import av
 
 from gui_helpers import (
     select_video_file,
     ask_save_plots,
     ask_save_path,
+    get_scale_from_user,
+    ScalePicker
 )
 
 def get_filename_parts(filename):
@@ -27,7 +31,26 @@ def main():
     if not video_path:
         print("No file selected. Exiting.")
         return
-    video_processor = ProcessVideo.BallTracker(pixelscale = (5.91*0.0254)/58.0)
+    # 230 for 4486
+    # 263 for #4490
+    
+    with av.open(video_path) as video:
+        stream = video.streams.video[0]
+        for frame in video.decode(stream):
+            img_rgb = frame.to_ndarray(format="rgb24")
+            break
+        
+    # known distance is the distance, in meters, between the markers.
+    # for this case, it's 0.8 meters. 
+    picker = ScalePicker(img_rgb)
+    pixelscale = picker.get_scale(known_distance=0.80)
+
+    print(f"{pixelscale:.3f} m / pixel")
+    
+    # pixelscale = get_scale_from_user(img_rgb, known_distance_m=0.8)
+    # print('pixelscale = {0}'.format(pixelscale))
+    
+    video_processor = ProcessVideo.BallTracker(pixelscale = pixelscale)
     basename,label = get_filename_parts(video_path)
     data[label] = video_processor.track_yellow_ball(video_path,
                                                  label= label)
@@ -53,7 +76,7 @@ def main():
 def write_excel(basename,label,data):
     import pandas as pd
     
-    with pd.ExcelWriter("tracks.xlsx") as writer:
+    with pd.ExcelWriter("{0}_tracks.xlsx".format(label)) as writer:
         for track_data in data:
             track_id = track_data[0]
             
@@ -76,6 +99,21 @@ def write_excel(basename,label,data):
                 sheet_name=f"track_{track_id}",
                 index=False
             )
+    return
+
+def plot_data(data):
+    plt.figure('Tracked positions')
+    for track_data in data:
+        track_id = track_data[0]
+        plt.plot(track_data[10],track_data[11],'o-',label='{0}'.format(track_id))
+    plt.grid(True)
+    plt.legend()
+    plt.xlabel('X (m)')
+    plt.ylabel('Y (m)')
+    return
+
+        
 
 if __name__ == "__main__":
     data = main()
+    plot_data(data[[*data][0]])

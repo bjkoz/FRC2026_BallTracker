@@ -40,7 +40,7 @@ class BallTracker():
 
         self.pixelscale =  pixelscale       
         
-        self.tracker = MultiobjectTracker.MultiObjectTracker(max_distance=100) # pixels)
+        self.tracker = MultiobjectTracker.MultiObjectTracker(max_distance=250) # pixels)
 
         self.minimum_area = 500 # number of pixels to be considered a ball. 
 
@@ -84,6 +84,7 @@ class BallTracker():
             number_frames = stream.frames
             
             for i, frame in enumerate(video.decode(stream)):
+                print('frame {0}'.format(i))
                 # pts * time_base = seconds
                 # This gets the time stamp for each frame. 
                 timestamp_sec = float(frame.pts * stream.time_base)
