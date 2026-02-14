@@ -84,11 +84,11 @@ class BallTracker():
             number_frames = stream.frames
             
             for i, frame in enumerate(video.decode(stream)):
-                print('frame {0}'.format(i))
+                #print('frame {0}'.format(i))
                 # pts * time_base = seconds
                 # This gets the time stamp for each frame. 
                 timestamp_sec = float(frame.pts * stream.time_base)
-                
+                #print('timestamp_sec {0}'.format(timestamp_sec))
                 image = self.convert_video_to_image(frame)
                 regions = self.segment_image(image)
                 valid_detections = regions['area'] > self.minimum_area
